@@ -373,4 +373,13 @@ defmodule Soap.WsdlTest do
     {:ok, parsed_wsdl} = Wsdl.parse_from_file(wsdl_path, allow_empty_soap_actions: true)
     assert Enum.empty?(parsed_wsdl.operations) == false
   end
+
+  test "#parse WSDL without schema namespace" do
+    wsdl_path = Fixtures.get_file_path("wsdl/StockServiceMinusNamespace.wsdl")
+    {:ok, parsed_wsdl} = Wsdl.parse_from_file(wsdl_path)
+    assert Enum.empty?(parsed_wsdl.operations) == true
+
+    {:ok, parsed_wsdl} = Wsdl.parse_from_file(wsdl_path, absent_schema_namespace: true)
+    assert Enum.empty?(parsed_wsdl.operations) == false
+  end
 end

@@ -41,6 +41,14 @@ iex(1)> {:ok, wsdl} = Soap.init_model(wsdl_path, :url)
 {:ok, parsed_wsdl}
 ```
 
+Parse WSDL has options for schemas with missing namespaces and empty soap actions:
+```elixir
+iex(1)> {:ok, wsdl} = Soap.init_model(wsdl_path, :url, allow_empty_soap_actions: true)
+{:ok, parsed_wsdl}
+iex(1)> {:ok, wsdl} = Soap.init_model(wsdl_path, :url, absent_schema_namespace: true)
+{:ok, parsed_wsdl}
+```
+
 Get list of available operations:
 ```elixir
 iex(2)> Soap.operations(wsdl)

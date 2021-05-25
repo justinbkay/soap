@@ -24,9 +24,9 @@ defmodule Soap.Wsdl do
     parse(wsdl, path, opts)
   end
 
-  @spec parse(String.t(), String.t(), map()) :: {:ok, map()}
+  @spec parse(String.t(), String.t(), list()) :: {:ok, map()}
   def parse(wsdl, file_path, opts \\ []) do
-    protocol_namespace = get_protocol_namespace(wsdl)
+    protocol_namespace = get_protocol_namespace(wsdl, opts)
     soap_namespace = get_soap_namespace(wsdl, opts)
     schema_namespace = get_schema_namespace(wsdl)
     endpoint = get_endpoint(wsdl, protocol_namespace, soap_namespace)
@@ -47,18 +47,12 @@ defmodule Soap.Wsdl do
 
   @spec get_schema_namespace(String.t()) :: String.t()
   defp get_schema_namespace(wsdl) do
-    case Application.fetch_env!(:soap, :globals)[:absent_schema_namespace] do
-      true ->
-        []
+    {_, _, _, schema_namespace, _} =
+      wsdl
+      |> xpath(~x"//namespace::*"l)
+      |> Enum.find(fn {_, _, _, _, x} -> x == :"http://www.w3.org/2001/XMLSchema" end)
 
-      _ ->
-        {_, _, _, schema_namespace, _} =
-          wsdl
-          |> xpath(~x"//namespace::*"l)
-          |> Enum.find(fn {_, _, _, _, x} -> x == :"http://www.w3.org/2001/XMLSchema" end)
-
-        schema_namespace
-    end
+    schema_namespace
   end
 
   @spec get_namespaces(String.t(), String.t(), String.t()) :: map()
@@ -134,7 +128,8 @@ defmodule Soap.Wsdl do
     )
   end
 
-  @spec get_full_paths(String.t(), String.t(), String.t(), String.t(), String.t()) :: list(String.t())
+  @spec get_full_paths(String.t(), String.t(), String.t(), String.t(), String.t()) ::
+          list(String.t())
   defp get_full_paths(wsdl, path, protocol_ns, schema_namespace, endpoint) do
     wsdl
     |> get_schema_imports(protocol_ns, schema_namespace)
@@ -171,7 +166,10 @@ defmodule Soap.Wsdl do
     |> xpath(~x"//#{ns("definitions", protocol_ns)}/#{ns("binding", protocol_ns)}/#{ns("operation", protocol_ns)}"l)
     |> Enum.map(fn node ->
       node
-      |> xpath(~x".", name: ~x"./@name"s, soap_action: ~x"./#{ns("operation", soap_ns)}/@soapAction"s)
+      |> xpath(~x".",
+        name: ~x"./@name"s,
+        soap_action: ~x"./#{ns("operation", soap_ns)}/@soapAction"s
+      )
       |> Map.put(:input, get_operation_input(node, protocol_ns, soap_ns))
     end)
     |> Enum.reject(fn x -> x[:soap_action] == "" && !opts[:allow_empty_soap_actions] end)
@@ -207,9 +205,9 @@ defmodule Soap.Wsdl do
     xpath(element, ~x"./#{ns("part", protocol_ns)}"l, name: ~x"./@name"s, element: ~x"./@element"s)
   end
 
-  @spec get_protocol_namespace(String.t()) :: String.t()
-  def get_protocol_namespace(wsdl) do
-    case Application.fetch_env!(:soap, :globals)[:absent_schema_namespace] do
+  @spec get_protocol_namespace(String.t(), list()) :: String.t()
+  def get_protocol_namespace(wsdl, opts) do
+    case opts[:absent_schema_namespace] do
       true ->
         []
 
