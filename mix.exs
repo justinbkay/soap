@@ -58,7 +58,7 @@ defmodule Soap.MixProject do
       {:credo, "~> 1.0", only: [:dev, :test]},
 
       # Docs
-      {:ex_doc, "~>  0.19.3", only: [:dev, :docs], runtime: false},
+      {:ex_doc, "~>  0.24.0", only: [:dev, :docs], runtime: false},
 
       # Testing
       {:mock, "~> 0.3.0", only: :test},

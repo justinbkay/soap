@@ -47,12 +47,18 @@ defmodule Soap.Wsdl do
 
   @spec get_schema_namespace(String.t()) :: String.t()
   defp get_schema_namespace(wsdl) do
-    {_, _, _, schema_namespace, _} =
-      wsdl
-      |> xpath(~x"//namespace::*"l)
-      |> Enum.find(fn {_, _, _, _, x} -> x == :"http://www.w3.org/2001/XMLSchema" end)
+    case Application.fetch_env!(:soap, :globals)[:absent_schema_namespace] do
+      true ->
+        []
 
-    schema_namespace
+      _ ->
+        {_, _, _, schema_namespace, _} =
+          wsdl
+          |> xpath(~x"//namespace::*"l)
+          |> Enum.find(fn {_, _, _, _, x} -> x == :"http://www.w3.org/2001/XMLSchema" end)
+
+        schema_namespace
+    end
   end
 
   @spec get_namespaces(String.t(), String.t(), String.t()) :: map()
@@ -202,11 +208,17 @@ defmodule Soap.Wsdl do
   end
 
   @spec get_protocol_namespace(String.t()) :: String.t()
-  defp get_protocol_namespace(wsdl) do
-    wsdl
-    |> xpath(~x"//namespace::*"l)
-    |> Enum.find(fn {_, _, _, _, url} -> url == :"http://schemas.xmlsoap.org/wsdl/" end)
-    |> elem(3)
+  def get_protocol_namespace(wsdl) do
+    case Application.fetch_env!(:soap, :globals)[:absent_schema_namespace] do
+      true ->
+        []
+
+      _ ->
+        wsdl
+        |> xpath(~x"//namespace::*"l)
+        |> Enum.find(fn {_, _, _, _, url} -> url == :"http://schemas.xmlsoap.org/wsdl/" end)
+        |> elem(3)
+    end
   end
 
   @spec get_soap_namespace(String.t(), list()) :: String.t()
